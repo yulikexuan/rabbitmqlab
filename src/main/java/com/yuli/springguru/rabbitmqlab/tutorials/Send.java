@@ -7,16 +7,22 @@ package com.yuli.springguru.rabbitmqlab.tutorials;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 @Slf4j
 public class Send implements Callable<Void> {
 
-    public static final String QUEUE_NAME = "hello";
+    public static final String QUEUE_NAME = "yli-task";
     public static final String HOST_NAME = "localhost";
+    public static final String CHAR_SET = "UTF-8";
+    public static final boolean QUEUE_DURABLE = true;
+
+    public static final int TASK_LOAD = 6;
 
     private void send() throws Exception {
 
@@ -34,21 +40,32 @@ public class Send implements Callable<Void> {
              * message content is a byte array, so you can encode whatever you
              * like there
              */
-            channel.queueDeclare(QUEUE_NAME, false, false,
+            channel.queueDeclare(QUEUE_NAME, QUEUE_DURABLE, false,
                     false, null);
 
-            String message = null;
-
-            int count = 10;
-            for (int i = 0; i < count; i++) {
-                message = i + ": Hello World!";
-                channel.basicPublish("", QUEUE_NAME, null,
-                        message.getBytes("UTF-8"));
-                log.debug(">>>>>>> [x] Sent '" + message + "'");
-                Thread.sleep(200);
+            ThreadLocalRandom random = ThreadLocalRandom.current();
+            String task = null;
+            for (int i = 0; i < TASK_LOAD; i++) {
+                task = this.makeTask(random, i);
+                log.debug(">>>>>>> Sending: '" + task + "'");
+                channel.basicPublish("", QUEUE_NAME,
+                        MessageProperties.PERSISTENT_TEXT_PLAIN,
+                        task.getBytes(CHAR_SET));
+                Thread.sleep(2000);
             }
         }
+    }
 
+    private String makeTask(ThreadLocalRandom random, int index) {
+        StringBuilder taskBuilder = new StringBuilder("Task ");
+        int weight = (index % 2 == 0) ? random.nextInt(1, 3) :
+                9;
+
+        for (int i = 0; i < weight; i++) {
+            taskBuilder.append(".");
+        }
+
+        return taskBuilder.toString();
     }
 
     @Override

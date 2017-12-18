@@ -15,8 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class Recv implements Callable<Void> {
 
-    private static AtomicInteger count = new AtomicInteger();
-
     private final String name;
 
     public Recv(String name) {
@@ -31,28 +29,54 @@ public class Recv implements Callable<Void> {
         try (Connection connection = factory.newConnection();
              Channel channel = connection.createChannel()) {
 
-            channel.queueDeclare(Send.QUEUE_NAME, false,
+            channel.queueDeclare(Send.QUEUE_NAME, Send.QUEUE_DURABLE,
                     false, false, null);
 
             log.debug(">>>>>>> [" + this.name +
                     "] Waiting for message. To exit press CTRL-C");
 
-            Consumer consumer = new DefaultConsumer(channel) {
+            /*
+             * RabbitMQ will not to give more than one message to this worker
+             * at a time
+             *
+             * Don't dispatch a new message to this worker until it has
+             * processed and acknowledged the previous one
+             */
+            int prefetchCount = 1;
+            channel.basicQos(prefetchCount);
+
+            final Consumer consumer = new DefaultConsumer(channel) {
                 @Override
                 public void handleDelivery(String consumerTag, Envelope envelope,
                                            AMQP.BasicProperties properties,
                                            byte[] body) throws IOException {
 
-                    String message = new String(body, "UTF-8");
-                    log.debug(">>>>>>> [" + name + "] Received: '" + message
+                    String task = new String(body, Send.CHAR_SET);
+                    log.debug(">>>>>>> [" + name + "] Processing: '" + task
                             + "'");
-                    count.addAndGet(1);
+                    int weight = 0;
+                    try {
+                        for (char ch: task.toCharArray()) {
+                            if (ch == '.') {
+                                Thread.sleep(1000);
+                                weight++;
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } finally {
+                        log.debug(">>>>>>> [" + name + "] Done: '" + weight
+                                + "'");
+                        channel.basicAck(envelope.getDeliveryTag(), false);
+                    }
                 }
             };
 
-            channel.basicConsume(Send.QUEUE_NAME, true, consumer);
-            while (count.get() < 10) {
-                Thread.sleep(200);
+            boolean autoAck = false;
+            channel.basicConsume(Send.QUEUE_NAME, autoAck, consumer);
+
+            while (true) {
+                Thread.sleep(1000);
             }
         }
     }

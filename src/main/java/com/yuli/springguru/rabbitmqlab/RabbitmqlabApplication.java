@@ -20,6 +20,16 @@ import java.util.concurrent.TimeUnit;
 public class RabbitmqlabApplication {
 
 	public static void main(String[] args) throws Exception {
+
 		SpringApplication.run(RabbitmqlabApplication.class, args);
+
+		if (args.length > 1) {
+			int arg0 = Integer.valueOf(args[0]);
+			if (arg0 == 1) {
+				new Recv(args[1]).call();
+			} else if (arg0 == 0) {
+				new Send().call();
+			}
+		}
 	}
 }
