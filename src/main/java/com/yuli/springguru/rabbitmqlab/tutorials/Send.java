@@ -48,6 +48,8 @@ public class Send implements Callable<Void> {
             for (int i = 0; i < TASK_LOAD; i++) {
                 task = this.makeTask(random, i);
                 log.debug(">>>>>>> Sending: '" + task + "'");
+                // The first parameter is the the name of the exchange
+                // "" means to use a default exchange
                 channel.basicPublish("", QUEUE_NAME,
                         MessageProperties.PERSISTENT_TEXT_PLAIN,
                         task.getBytes(CHAR_SET));
