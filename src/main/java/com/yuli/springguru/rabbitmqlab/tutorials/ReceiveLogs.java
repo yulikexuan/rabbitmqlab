@@ -8,16 +8,17 @@ import com.rabbitmq.client.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 
 @Slf4j
 public class ReceiveLogs implements Callable<Void> {
 
-    private final String name;
+    private final String logType;
 
-    public ReceiveLogs(String name) {
-        this.name = name;
+    public ReceiveLogs(String logType) {
+        this.logType = logType;
     }
 
     private void consumeLogs() throws Exception {
@@ -29,11 +30,29 @@ public class ReceiveLogs implements Callable<Void> {
              Channel channel = connection.createChannel()) {
 
             channel.exchangeDeclare(EmitLog.EXCHANGE_NAME,
-                    BuiltinExchangeType.FANOUT);
+                    BuiltinExchangeType.DIRECT);
             String queueName = channel.queueDeclare().getQueue();
-            channel.queueBind(queueName, EmitLog.EXCHANGE_NAME, "");
 
-            log.debug(">>>>>>> [" + this.name +
+            if (Severity.INFO.getSeverity().equals(this.logType)) {
+                Arrays.stream(Severity.values()).forEach(s -> {
+                    try {
+                        channel.queueBind(queueName, EmitLog.EXCHANGE_NAME,
+                                s.getSeverity());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            } else if (Severity.WARNING.getSeverity().equals(this.logType)) {
+                channel.queueBind(queueName, EmitLog.EXCHANGE_NAME,
+                        Severity.WARNING.getSeverity());
+                channel.queueBind(queueName, EmitLog.EXCHANGE_NAME,
+                        Severity.ERROR.getSeverity());
+            } else {
+                channel.queueBind(queueName, EmitLog.EXCHANGE_NAME,
+                        Severity.ERROR.getSeverity());
+            }
+
+            log.debug(">>>>>>> [" + this.logType +
                     "] Waiting for logs, to exit press CTRL-C");
 
             Consumer consumer = new DefaultConsumer(channel) {
@@ -43,8 +62,7 @@ public class ReceiveLogs implements Callable<Void> {
                         byte[] body) throws IOException {
 
                     String message = new String(body, "UTF-8");
-                    log.debug(">>>>>>> [" + ReceiveLogs.this.name +
-                            "] Received Log: '" + message + "'");
+                    log.debug(">>>>>>> " +  message);
                 }
             };
 

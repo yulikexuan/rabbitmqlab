@@ -15,3 +15,13 @@
     java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 3 log-consumer-1
     java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 3 log-consumer-2
     java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 2 log-producer-1
+
+3.  Routing
+
+    2: create instance of com.yuli.springguru.rabbitmqlab.tutorials.EmitLog
+    3: create instance of com.yuli.springguru.rabbitmqlab.tutorials.ReceiveLogs
+
+    java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 3 info
+    java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 3 warning
+    java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 3 error
+    java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 2 log-producer
