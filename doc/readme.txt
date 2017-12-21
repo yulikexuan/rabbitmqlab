@@ -32,10 +32,17 @@
     5: create instance of com.yuli.springguru.rabbitmqlab.tutorials.ReceiveLogsTopic
 
     java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 5 *.orange.*
-    java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 5 *.*.rabbit lazy.#
+    java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 5 "*.*.rabbit" "lazy.#"
     java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 4 quick.orange.rabbit
+
+    # Receive all logs
+    java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 4 #
+
+    java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 4
 
     java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 4 lazy.orange.elephant
     java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 4 quick.orange.fox
     java -jar rabbitmqlab-0.0.1-SNAPSHOT.jar 4 lazy.brown.fox
+
+5.  RPC
 
