@@ -66,6 +66,15 @@ public class RPCServer implements Callable<Void> {
                 }
             };
 
+            boolean autoAck = false;
+            channel.basicConsume(RPC_QUEUE_NAME, autoAck, consumer);
+
+            while (true) {
+                synchronized (consumer) {
+                    consumer.wait();
+                }
+            }
+
         }// End of try block
 
     }// End of calculate()
